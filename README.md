@@ -11,6 +11,7 @@
 
 
   - [License](#license)
+  - [Special Shout Outs](#special-shout-outs)
  
 # Smart Lending
 
@@ -26,21 +27,46 @@ Smart Lending introduces an order book model for decentralized lending for the f
 * **Innovative Approach to DeFi**: The order book model applied to lending is an innovative approach in the DeFi space. It blends elements of traditional finance (like order books) with the benefits of the eUTxO model of Cardano. This offers more competitive rates with the ability for loans to be filled based on partial or multiple existing offers, and can lead to more competitive interest rates, as lenders compete to have their funds borrowed. Additionally, this should encourage increased liquidity since loans can be partially filled, making funds more readily available.
 
 
-## Design Framework
+## Smart Contract Design Approach 
+For this smart contract there will be two parties involved. A lender and a borrower. The lender will have 4 actions they can perform(1 not requiring any smart contract interaction).
+* Create loan offers
+* Cancel loan offers
+* Liquidate collaterals
+* Collect interests
+  
+The borrower will have 2 actions they can perform
+* Get loan
+* Repay loan
+
+We want to make sure of the following things for the two parties, but not limited to
 **Lenders**  
 * For the amount of loan they gave out, there needs to be the correct amount of collateral locked up in the contract
-* They are able liquidate the collateral once the interest has not been paid by the deadline
-* Only they can liquidate the collateral, cancel the loan offers
+* They will collect the correct amount of interest for the loan they gave out
 
 **Borrowers**  
-* They can get back their collateral once they pay back the correct amount of interest
+* They can get their collateral back once they pay back the correct amount of interest
 
+There will be 3 different validators, and 2 different staking validators being used. We will be consuming multiple UTXOs from the script and for a more efficient transaction we will be using a staking validator for validating logics. Read more about that here [https://github.com/Anastasia-Labs/design-patterns/blob/main/stake-validator/STAKE-VALIDATOR.md]
+The action of canceling a loan offer and grabbing a loan will be on one validator and an attached staking validator
+The actions of liquidating collateral and or paying interest will be on one validator and an attached staking validator  
+The actions of getting interest payment will be on one script validator
 
+The actions of cancelling loans, liquidating collaterals, and grabbing interest payments will simply require looking at the signatures in the transaction. Then checking if it came from the address specified in the datum of the UTXOs they are consuming. 
+
+A brief overview of the action getting a loan and repaying the loan requires us to validate the datum and value of the UTXOs in the outputs are valid in regards to the input UTXOs coming from the validator.  
 
 ## Technical Implementation
 
 ### Grab Loan
+###### High Level Implementation
 
 
+###### High Level Code
+
+## Technical Implementation
+
+
+### Special Shout Outs
+Special thanks to Keyan M's guidance, and open-sourced code from Anastasia Labs and Lenfi for making this happen <3 
 
 
