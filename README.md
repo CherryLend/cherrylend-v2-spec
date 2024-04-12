@@ -3,13 +3,17 @@
 
 - [Smart Lending](#smart-lending)
   - [Introduction](#introduction)
-  - [Smart Contract Design Framework](#smart-contract-desgin-framework)
-  - [Technical Implementation](#technical-implementation)
+  - [Smart Contract Design Approach](#smart-contract-desgin-approach)
+  - [Smart Contract Technical Implementation](#smart-contract-technical-implementation)
     - [Grab Loan](#grab-loan)
         - [High Level](#grab-loan-high-level)
         - [Smart Contract Implementation](#grab-loan-validation)
-
-
+    - [Grab Loan](#grab-loan)
+        - [High Level](#grab-loan-high-level)
+        - [Smart Contract Implementation](#grab-loan-validation)
+    - [Cancel Loan Offer, Liqudate Collateral, Get Interest Payment](#cancel-loan-offer-liquidate-collateral-get-interest-payment)
+        - [High Level](#grab-loan-high-level)
+        - [Smart Contract Implementation](#grab-loan-validation)
   - [License](#license)
   - [Special Shout Outs](#special-shout-outs)
  
