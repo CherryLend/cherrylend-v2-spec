@@ -3,15 +3,14 @@
 
 - [Smart Lending](#smart-lending)
   - [Introduction](#introduction)
-  - [High Level Overview](#high-level-overview)
+  - [High-Level Overview](#high-level-overview)
   - [Smart Contract Technical Implementation](#smart-contract-technical-implementation)
     - [Grab Loan](#grab-loan)
     - [Repay Loan](#repay-loan)
     - [Cancel Loan Offer](#cancel-loan-offer)
     - [Liquidate Collateral](#liquidate-collateral)
     - [Collect Interest Payment](#collect-interest-payment)
-  - [Splitting Loan Offer Into Multiple UTXOs](#splitting-loan-offers)
-  - [Selecting Loan UTXOs For Borrowers](#selecting-loan-utxos-for-borrowers)
+  - [Splitting Loan Offer Into Multiple UTXOs And Selecting Loan UTXOs For Borrowers](#splitting-loan-offer-into-multiple-utxos-and-selecting-loan-utxos-for-borrowers)
 - [Special Shout Outs](#special-shout-outs)
  
 # Smart Lending
@@ -27,7 +26,7 @@ Smart Lending introduces an order book model for decentralized lending for the f
 * **Innovative Approach to DeFi**: The order book model applied to lending is an innovative approach in the DeFi space. It blends elements of traditional finance (like order books) with the benefits of the eUTxO model of Cardano. This offers more competitive rates with the ability for loans to be filled based on partial or multiple existing offers, and can lead to more competitive interest rates, as lenders compete to have their funds borrowed. Additionally, this should encourage increased liquidity since loans can be partially filled, making funds more readily available.
 
 
-## High Level Overview
+## High-Level Overview
 The lender will have 4 actions they can perform.
 * Create loan offers(Does not require any smart-contract validations)
 * Cancel loan offers
@@ -45,23 +44,26 @@ We want to make sure of the following things for the lenders
 We want to make sure of the following things for the borrowers
 * They can get their collateral back once they pay back the correct amount of interest
 
-
+There will be 3 main contracts. One loan contract which holds the original loan offer UTXOs that handles the validation of lenders cancelling a loan offer and a borrower recieving a loan. When the borrower recieves the loan, they will be sending their collaterals to be locked up at the collateral contract. The collateral contractc will handle the the validations of lenders liquidating the collateral and borrowers getting back their collateral. When the borrowers will get their collaterals back when they send the interest and original loan amount to the interest script. the interest script will handle the validations of the lender getting their original loan and interest amount.
 
 ## Smart Contract Technical Implementation
-DISCLAIMER!!!! Codes are simplified for easier reading. To view full code please visit https://github.com/CherryLend/cherrylend-v2-smart-contracts
+DISCLAIMER!!!! Sample Codes are simplified for easier reading. To view full code please visit https://github.com/CherryLend/cherrylend-v2-smart-contracts
+
 ### Grab Loan
-##### High Level Implementation
-For grabbing a loan we will be consuming multiple UTXOs from the validator script to fulfill a loan. We need to validate the output collateral UTXOs and any refund UTXOs are valid. We will create a data type that has properties such as collateral amount, interest amount etc.... from looping through both the outputs and inputs. We will then compare the resulting two datatypes. 
-
-To achieve this we first need to fold the input UTXOs, remove duplicate lender addresses, combine the collateral amount,loan amount, and interest amount. 
-
-The collateral amount from inputs will be calculated by looking at the datum values and adding them. The interest amount will also be added up by looking at the datum. The loan amount will be calculated by grabbing the asset from the datum looking at each input's value and getting the amount of that asset in that UTXO. 
-
-We will assume the output UTXO will be for each unique for each lender address so we don’t need to fold it. If it is not unique the final validation will still fail. We will map the output collateral UTXO and grab the value loan_amount from the datum, and the collateral amount by looking at the collateral asset and grabbing the amount of that asset in that UTXO. We will also add one additional logic in the map function. The map function will only return data from the output UTXO if the borrower address, lend time, total loan amount, and transaction id in the datum are valid. 
+##### High-Level Implementation
+For grabbing a loan we will be consuming multiple UTXOs from the validator script to fulfill a loan. We need to validate the output collateral UTXOs and any refund UTXOs are valid. We will create a data type that has the following properties loan amount, loan asset, collateral amount, collateral asset, interest amount, interest asset, lender address hash, and loan duration from looping through both the outputs and inputs. We will then compare the resulting two datatypes. 
 
 We are looking at the datum value when the value specified in the datum is not being spent in the transaction and look at the actual in the UTXO value when it is being spent. This ensures the initial datum values are not corrupted(ie the interest amount and asset when the loan offer was submitted), and the requirements of performing an action are not be gamed by changing the datum values in the output(ie the collateral datum value in the collateral UTXO).
 
-##### High Level Code
+
+
+To achieve this we first need to fold the input UTXOs and remove duplicate lender address hash. For duplicated lender address hash we will sum up the collateral amount, loan amount, and interest amount and keep the loan duration the same. The collateral amount and interest amount will be calculated by looking at the datum values. The loan amount will be calculated by getting the value of the loan asset in the input UTXO.
+
+We will assume the output UTXO will be unique for each lender address so we don’t need to fold it. If it is not unique the final validation will fail. We will use a filter map function. We will get the loan amount from the datum. The collateral amount will be calculated by grabbing the amount of collateral assets in the output UTXO. The map function will only return data from the output UTXO if the borrower address, lend time, total loan amount, and transaction id in the datum are valid. 
+
+
+
+##### Quick Code Walkthrough
 Data type to compare the input and output UTXOs
 ```
 pub type Info {
@@ -109,7 +111,7 @@ Check if the two info matches up
   info_matches
 ```
 ### Repay Loan
-##### High Level Implementation
+##### High-Level Implementation
 To repay a loan, the borrower will consume the collateral locked up at the collateral script and send the interest payments to the interest script. Repaying loan validation will be similar to grabbing a loan. We will be creating a new data type that contains fields such as from looping through the inputs that are coming from the collateral script and outputs going back to the interest script. Then comparing the two. We will assume both the inputs from the collateral script and outputs going to the interest script both contain unique lender addresses. 
 
 First we will map_filter through the inputs from the collateral script to grab the following information from the datum, lender address, loan amount, loan asset, repay interest amount, and repay interest asset. We know these values are valid because we already validated them in the loan script. We will only return the info in the filter_map if the following validations are true. The deadline to repay the loan has not passed. The original loan borrower signed the transaction.
@@ -187,8 +189,8 @@ Check if the two info matches up
 ```
 
 
-### Cancel Loan
-##### High Level Implementation
+### Cancel Loan Offer
+##### High-Level Implementation
 To cancel a loan we need to make sure the original lender is signing the transaction. The original lender's address hash is stored in the datum of the loan offer UTXO.
 
 
@@ -229,11 +231,9 @@ let must_be_signed_by_lender =
     must_be_signed_by_lender
 ```
 
-### Splitting Loan Offer Into Multiple UTXOs
+### Splitting Loan Offer Into Multiple UTXOs And Selecting Loan UTXOs For Borrowers 
 // TODO
 
-### Selecting Loan UTXOs For Borrowers
-// TODO
 
 ### Special Shout Outs
 Special thanks to Keyan M's guidance, and open-sourced code from Anastasia Labs, Lenfi, and Sundae Labs for making this happen <3 
