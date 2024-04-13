@@ -11,7 +11,7 @@
     - [Liquidate Collateral](#liquidate-collateral)
     - [Collect Interest Payment](#collect-interest-payment)
   - [Splitting Loan Offer Into Multiple UTXOs](#splitting-loan-offers)
-  - [Selecting Loan UTXOs For Borrowers][#selecting-loan-utxos-for-borrowers)
+  - [Selecting Loan UTXOs For Borrowers](#selecting-loan-utxos-for-borrowers)
 - [Special Shout Outs](#special-shout-outs)
  
 # Smart Lending
