@@ -11,6 +11,7 @@
     - [Liquidate Collateral](#liquidate-collateral)
     - [Collect Interest Payment](#collect-interest-payment)
   - [Splitting Loan Offer Into Multiple UTXOs And Selecting Loan UTXOs For Borrowers](#splitting-loan-offer-into-multiple-utxos-and-selecting-loan-utxos-for-borrowers)
+- [Links](#links)
 - [Special Shout Outs](#special-shout-outs)
  
 # Smart Lending
@@ -50,8 +51,6 @@ The validators will be written in Aiken. There will be three main contracts:
 3. An interest script that will handle the validations of the lender getting their original loan amount and interest when the borrowers send the interest and original loan amount to this script to get their collaterals back.
 
 ## Smart Contract Technical Implementation
-DISCLAIMER!!!! Sample Codes are simplified for easier reading. To view full code please visit https://github.com/CherryLend/cherrylend-v2-smart-contracts
-
 ### Get Loan
 ##### High-Level Implementation
 To get a loan, we will consume multiple UTXOs from the validator script to fulfill a loan. We need to validate the output collateral UTXOs and any refund UTXOs. We will create a data type that has the following properties: loan amount, loan asset, collateral amount, collateral asset, interest amount, interest asset, lender address hash, and loan duration. We will do this by looping through both the outputs and inputs. We will then compare the resulting two data types.
@@ -236,6 +235,11 @@ must_be_signed_by_lender
 When a user submits a loan offer, we will split the initial loan into multiple small loans to be locked up at the loan script. Each split UTXO will contain an equal amount of assets, but the amount may vary for different tokens.
 
 When a borrower searches for a loan, we will use an algorithm that gives priority to loan offers submitted earlier. The probability of a loan offer being selected increases exponentially with the time elapsed since the lender submitted it. Larger loan offers from lenders will have a higher chance of being selected, as they will contribute more UTXOs to the pool.
+
+### Links
+[Smart Contract](#https://github.com/CherryLend/cherrylend-v2-smart-contracts)
+[Off-Chain](#https://github.com/CherryLend/cherrylend-v2-offchain) (still work in progress)
+
 
 ### Special Shout Outs
 Special thanks to Keyan M's guidance, and open-sourced code from Anastasia Labs, Lenfi, and Sundae Labs for making this happen <3 
