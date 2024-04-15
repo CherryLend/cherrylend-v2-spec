@@ -5,7 +5,7 @@
   - [Introduction](#introduction)
   - [High-Level Overview](#high-level-overview)
   - [Smart Contract Technical Implementation](#smart-contract-technical-implementation)
-    - [Grab Loan](#grab-loan)
+    - [Get Loan](#get-loan)
     - [Repay Loan](#repay-loan)
     - [Cancel Loan Offer](#cancel-loan-offer)
     - [Liquidate Collateral](#liquidate-collateral)
@@ -49,19 +49,15 @@ There will be 3 main contracts. One loan contract which holds the original loan 
 ## Smart Contract Technical Implementation
 DISCLAIMER!!!! Sample Codes are simplified for easier reading. To view full code please visit https://github.com/CherryLend/cherrylend-v2-smart-contracts
 
-### Grab Loan
+### Get Loan
 ##### High-Level Implementation
-For grabbing a loan we will be consuming multiple UTXOs from the validator script to fulfill a loan. We need to validate the output collateral UTXOs and any refund UTXOs are valid. We will create a data type that has the following properties loan amount, loan asset, collateral amount, collateral asset, interest amount, interest asset, lender address hash, and loan duration from looping through both the outputs and inputs. We will then compare the resulting two datatypes. 
+To get a loan, we will consume multiple UTXOs from the validator script to fulfill a loan. We need to validate the output collateral UTXOs and any refund UTXOs. We will create a data type that has the following properties: loan amount, loan asset, collateral amount, collateral asset, interest amount, interest asset, lender address hash, and loan duration. We will do this by looping through both the outputs and inputs. We will then compare the resulting two data types.
 
-We are looking at the datum value when the value specified in the datum is not being spent in the transaction and look at the actual in the UTXO value when it is being spent. This ensures the initial datum values are not corrupted(ie the interest amount and asset when the loan offer was submitted), and the requirements of performing an action are not be gamed by changing the datum values in the output(ie the collateral datum value in the collateral UTXO).
+We are looking at the datum value when the value specified in the datum is not being spent in the transaction, and look at the actual value in the UTXO when it is being spent. This ensures that the initial datum values are not corrupted (i.e., the interest amount and asset when the loan offer was submitted), and the requirements are not circumvented by changing the datum values in the output (i.e., the collateral datum value in the collateral UTXO).
 
+To achieve this, we first need to fold the input UTXOs and remove duplicate lender address hashes. For duplicated lender address hashes, we will sum up the collateral amount, loan amount, and interest amount, and keep the loan duration the same. The collateral amount and interest amount will be calculated by looking at the datum values. The loan amount will be calculated by getting the value of the loan asset in the input UTXO.
 
-
-To achieve this we first need to fold the input UTXOs and remove duplicate lender address hash. For duplicated lender address hash we will sum up the collateral amount, loan amount, and interest amount and keep the loan duration the same. The collateral amount and interest amount will be calculated by looking at the datum values. The loan amount will be calculated by getting the value of the loan asset in the input UTXO.
-
-We will assume the output UTXO will be unique for each lender address so we don’t need to fold it. If it is not unique the final validation will fail. We will use a filter map function. We will get the loan amount from the datum. The collateral amount will be calculated by grabbing the amount of collateral assets in the output UTXO. The map function will only return data from the output UTXO if the borrower address, lend time, total loan amount, and transaction id in the datum are valid. 
-
-
+We will assume that the output UTXO will be unique for each lender address, so we don't need to fold it. If it is not unique, the final validation will fail. We will use a filter map function. We will get the loan amount from the datum. The collateral amount will be calculated by grabbing the amount of collateral assets in the output UTXO. The map function will only return data from the output UTXO if the borrower address, lend time, total loan amount, and transaction ID in the datum are valid.
 
 ##### Quick Code Walkthrough
 Data type to compare the input and output UTXOs
@@ -105,23 +101,25 @@ let outputs_collateral_info: List<Info> = outputs_collateral_info()
 
 Check if the two info matches up 
 ```
-  let info_difference =
+let info_difference =
     list.difference(input_loan_info, outputs_collateral_info)
-  let info_matches = list.length(info_difference) == 0
-  info_matches
+let info_matches = list.length(info_difference) == 0
+info_matches
 ```
 ### Repay Loan
 ##### High-Level Implementation
-To repay a loan, the borrower will consume the collateral locked up at the collateral script and send the interest payments to the interest script. Repaying loan validation will be similar to grabbing a loan. We will be creating a new data type that contains fields such as from looping through the inputs that are coming from the collateral script and outputs going back to the interest script. Then comparing the two. We will assume both the inputs from the collateral script and outputs going to the interest script both contain unique lender addresses. 
+To repay a loan, the borrower will consume the collateral locked up at the collateral script and send the interest payments to the interest script. Repaying loan validation will be similar to grabbing a loan. We will be creating a new data type(ValidateInterestPayment) that contains the following fields repay loan amount, repay loan asset, repay interest amount, repay interest asset, and lender address hash from looping through the inputs that are coming from the collateral script and outputs going back to the interest script. We will assume both the inputs from the collateral script and outputs going to the interest script both contain unique lender addresses so we don't need to fold here.  
 
-First we will map_filter through the inputs from the collateral script to grab the following information from the datum, lender address, loan amount, loan asset, repay interest amount, and repay interest asset. We know these values are valid because we already validated them in the loan script. We will only return the info in the filter_map if the following validations are true. The deadline to repay the loan has not passed. The original loan borrower signed the transaction.
+First, we will use a map_filter through the inputs from the collateral script to grab the following information from the datum: lender address, loan amount, loan asset, repay interest amount, and repay interest asset. We know these values are valid because we already validated them in the loan script. We will only return the a constructed ValidateInterestPayment in the filter_map if the following validations are true: 
+* The deadline to repay the loan has not passed, and the original loan borrower signed the transaction.
+* The tx ids are the same. 
+* The total loan amount and total repay loan amount, which we got from calculating the outputs going to the interest script,needs to equals the amount specified in the input collateral UTXOs datum.
+* 
+These checks ensure that the loans are from the same transaction, the borrower is paying off the entire loan, not just parts of it, and the borrower still has time to pay off the loan.
 
-The tx_id are all the same. The total loan amount and total repay loan amount, which we got from the outputs going to the interest script, equals the amount specified in the datum. This ensures that the borrower repaid the entire loan, not just parts of it. These two checks ensures that the loan are from the same transaction and the borrower are paying off the entire loan, not just parts of it.
+The output interest payment UTXOs will contain datum values specifying the loan asset and repay interest asset. We will map through each UTXOs then look into the UTXO to see how much assets it contains and return a constructed ValidateInterestPayment. 
 
-
-When we map through the outputs going to the interest script, we need to look in the value of the UTXO to see if they contain the correct original loan asset amount and repay interest asset amount. Then we will compare the two list of datatypes.
-
-
+The resulting two lists of ValidateInterestPayment from the inputs and outputs will confirm that the borrower is paying the correct amount back to the lenders. 
 ##### Quick Code Walkthrough
 Grab all input UTXOs coming from the collateral validator 
 ```
@@ -148,14 +146,14 @@ let total_repay_amount: LoanAndInterestAmount =
 Get info from the inputs 
 
 ```
-  let inputs_collateral_info: List<ValidateRepayInfo> =
-    get_inputs_collateral_info(
-      inputs_from_collateral_validator,
-      total_repay_amount,
-      loan_tx_id,
-      validity_range,
-      signatures,
-    )
+let inputs_collateral_info: List<ValidateRepayInfo> =
+  get_inputs_collateral_info(
+    inputs_from_collateral_validator,
+    total_repay_amount,
+    loan_tx_id,
+    validity_range,
+    signatures,
+)
 
 fn get_inputs_collateral_info(
   ...
@@ -166,7 +164,7 @@ fn get_inputs_collateral_info(
     fn(input_from_collateral_validator: Input) {
       ........
       let collateral_valid =
-        tx_id_valid && total_loan_amount_valid && deadline_not_passed && signed_by_borrower &&           total_interest_amount_valid
+        tx_id_valid && total_loan_amount_valid && deadline_not_passed && signed_by_borrower &&                 total_interest_amount_valid
      if collateral_valid {
       None
     } else {
@@ -177,15 +175,15 @@ fn get_inputs_collateral_info(
 ```
 Get the output UTXOs info 
 ```
-  let outputs_interest_info: List<ValidateRepayInfo> =
-    get_outputs_interest_info(outputs_to_interest_validator)
+let outputs_interest_info: List<ValidateRepayInfo> =
+  get_outputs_interest_info(outputs_to_interest_validator)
 ```
 Check if the two info matches up 
 ```
-  let info_difference =
+let info_difference =
     list.difference(input_loan_info, outputs_collateral_info)
-  let info_matches = list.length(info_difference) == 0
-  info_matches
+let info_matches = list.length(info_difference) == 0
+info_matches
 ```
 
 
@@ -197,9 +195,9 @@ To cancel a loan we need to make sure the original lender is signing the transac
 ##### Quick Code Walkthrough
 Check transaction is signed by the lender
 ```
-    let must_be_signed_by_lender =
-          list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
-        must_be_signed_by_lender
+let must_be_signed_by_lender =
+  list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
+must_be_signed_by_lender
 ```
 
 ### Liquidate Collateral
@@ -209,13 +207,13 @@ To liquidate a collateral we need to first check that the repay period has expir
 ##### Quick Code Walkthrough
 Check the deadline has passed and transaction signed by original lender
 ```
-    let must_be_signed_by_lender =
-          list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
-        let deadline_passed =
-          datum.loan_duration + datum.lend_time < utils.get_lower_bound(
-            ctx.transaction.validity_range,
-          )
-        must_be_signed_by_lender && deadline_passed
+let must_be_signed_by_lender =
+  list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
+let deadline_passed =
+  datum.loan_duration + datum.lend_time < utils.get_lower_bound(
+    ctx.transaction.validity_range,
+  )
+must_be_signed_by_lender && deadline_passed
 ```
 
 ### Collect Interest Payment
@@ -227,13 +225,14 @@ To cancel a loan we need to make sure the original lender is signing the transac
 Check transaction has been signed by the original lender
 ```
 let must_be_signed_by_lender =
-      list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
-    must_be_signed_by_lender
+  list.has(ctx.transaction.extra_signatories, datum.lender_address_hash)
+must_be_signed_by_lender
 ```
 
 ### Splitting Loan Offer Into Multiple UTXOs And Selecting Loan UTXOs For Borrowers 
-// TODO
+When a user submits a loan offer, we will split the initial loan into multiple small loans to be locked up at the loan script. Each split UTXO will contain an equal amount of assets, but the amount may vary for different tokens.
 
+When a borrower searches for a loan, we will use an algorithm that gives priority to loan offers submitted earlier. The probability of a loan offer being selected increases exponentially with the time elapsed since the lender submitted it. Larger loan offers from lenders will have a higher chance of being selected, as they will contribute more UTXOs to the pool.
 
 ### Special Shout Outs
 Special thanks to Keyan M's guidance, and open-sourced code from Anastasia Labs, Lenfi, and Sundae Labs for making this happen <3 
