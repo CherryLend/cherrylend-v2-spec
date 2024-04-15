@@ -344,7 +344,7 @@ must_be_signed_by_lender
 ### Links
 [Smart Contract](https://github.com/CherryLend/cherrylend-v2-smart-contracts)
 
-[Off-Chain](https://github.com/CherryLend/cherrylend-v2-offchain) (still work in progress)
+[Off-Chain](https://github.com/CherryLend/cherrylend-v2-offchain) (work in progress)
 
 
 ### Special Shout Outs
