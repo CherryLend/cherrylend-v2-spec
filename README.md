@@ -237,9 +237,9 @@ When a user submits a loan offer, we will split the initial loan into multiple s
 When a borrower searches for a loan, we will use an algorithm that gives priority to loan offers submitted earlier. The probability of a loan offer being selected increases exponentially with the time elapsed since the lender submitted it. Larger loan offers from lenders will have a higher chance of being selected, as they will contribute more UTXOs to the pool.
 
 ### Links
-(Smart Contract)[#https://github.com/CherryLend/cherrylend-v2-smart-contracts]
+[Smart Contract](https://github.com/CherryLend/cherrylend-v2-smart-contracts)
 
-(Off-Chain)[#https://github.com/CherryLend/cherrylend-v2-offchain] (still work in progress)
+[Off-Chain](https://github.com/CherryLend/cherrylend-v2-offchain) (still work in progress)
 
 
 ### Special Shout Outs
