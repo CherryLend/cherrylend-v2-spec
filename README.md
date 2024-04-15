@@ -44,13 +44,10 @@ We want to make sure of the following things for the lenders
 We want to make sure of the following things for the borrowers
 * They can get their collateral back once they pay back the correct amount of interest
 
-Here's the proofread version with improvements for clarity and grammar:
-
-The validators will be written in Aiken. There will be three main contracts.
-
-A loan contract that holds the original loan offer UTXOs, handling the validation of lenders canceling a loan offer and a borrower receiving a loan. When the borrower receives the loan, they will send their collaterals to be locked up at the collateral contract.
-A collateral contract that will handle the validations of lenders liquidating the collateral and borrowers getting back their collateral.
-An interest script that will handle the validations of the lender getting their original loan amount and interest when the borrowers send the interest and original loan amount to this script to get their collaterals back.
+The validators will be written in Aiken. There will be three main contracts:
+1. A loan contract that holds the original loan offer UTXOs, handling the validation of lenders canceling a loan offer and a borrower receiving a loan. When the borrower receives the loan, they will send their collaterals to be locked up at the collateral contract.
+2. A collateral contract that will handle the validations of lenders liquidating the collateral and borrowers getting back their collateral.
+3. An interest script that will handle the validations of the lender getting their original loan amount and interest when the borrowers send the interest and original loan amount to this script to get their collaterals back.
 
 ## Smart Contract Technical Implementation
 DISCLAIMER!!!! Sample Codes are simplified for easier reading. To view full code please visit https://github.com/CherryLend/cherrylend-v2-smart-contracts
