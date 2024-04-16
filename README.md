@@ -38,8 +38,8 @@ A borrower will have 2 actions they can perform:
 * Get loan
 * Repay loan
 
-
 Logics of the contracts will focus on making sure of the following things.
+
 Lenders:
 * For the amount of loan they gave out, there needs to be the correct amount of collateral locked up in the contract
 and be able to liquidate it once the payment period has past
