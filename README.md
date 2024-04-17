@@ -241,8 +241,9 @@ The collateral validator will assume that the input collateral UTxOs and output 
 
 A filter map function will be used for the input collateral UTxOs. The datum in the inputs will be used to construct the value of lender address hash, loan amount, loan asset, repay interest amount, and repay interest asset. We can trust these values in the datum because we have already validated them in the loan validator. We will only return a constructed ValidateRepayInfo if the following validations are true: 
 * The deadline to repay the loan has not passed, and the original loan borrower signed the transaction.
-* The total loan amount and total repay loan amount going to the interest validator need to equal the amount specified in the datum.
-These checks ensure that the entire loan is being paid off not just parts of it and there is still time to pay off the loan.
+* The total loan amount and total repaid loan amount going to the interest validator need to equal the amount specified in the datum.
+* The original borrower is signing the transaction
+These checks ensure that the entire loan is being paid off not just parts of it, there is still time to pay off the loan, and preventing someone else other than the original borrower from getting the collateral.
 
 
 The output interest UTxOs contain the loan asset and repay interest asset in the datum. We will map through each UTxO to find the amount of each asset it contains. The rest of the ValidateRepayInfo properties will be constructed from the datum in the output interest UTxO.
@@ -263,7 +264,7 @@ let outputs_to_interest_validator: List<Output> = find_script_outputs()
 ```
 
 
-Get the total loan repay amount and interest amount from the UTxOs going to the interest validator
+Get the total loan repaid amount and interest amount from the UTxOs going to the interest validator
 ```
 pub type LoanAndInterestAmount {
   loan_amount: Int,
@@ -285,8 +286,7 @@ fn get_inputs_collateral_info(
     inputs_from_collateral_validator,
     fn(input_from_collateral_validator: Input) {
       ...
-      let collateral_valid =
-        tx_id_valid && total_loan_amount_valid && deadline_not_passed && signed_by_borrower &&                 total_interest_amount_valid
+      let collateral_valid = total_loan_amount_valid && deadline_not_passed && signed_by_borrower && total_interest_amount_valid
      if collateral_valid {
        Some(ValidateRepayInfo ....)
      } else {
