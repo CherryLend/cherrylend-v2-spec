@@ -113,7 +113,6 @@ pub type CollateralDatum {
   total_interest_amount: Int,
   total_loan_amount: Int,
   borrower_address_hash: AddressHash,
-  tx_id: TransactionId,
 }
 ```
 
@@ -121,10 +120,9 @@ The filter map function will only return a constructed ValidateLoanInfo if the f
 * Lend time is within the transaction validity range 
 * The total loan amount is equal to the total loan amount we got from the inputs
 * The total interest amount is equal to the total interest amount we got from the inputs 
-* The transaction id in the datum is equal to the current transaction
-
+The latter two validations will be useful when paying back the loan.
   
-The resulting two lists will validate the datum in the collateral UTxO has not been corrupted. For example, the lender address hash has been changed. It will also validate that the correct amount of collateral is being locked up at the collateral validator.
+The resulting two lists will validate that the datum in the collateral UTxO has not been corrupted. For example, the lender address hash has been changed. It will also validate that the correct amount of collateral is being locked up at the collateral validator.
 
 #### Quick Code Walkthrough
 Get all inputs coming from the loan validator
@@ -197,8 +195,7 @@ fn get_outputs_collateral_info(
     validator_outputs,
     fn(output: Output) {
       ...
-      let output_datum_valid =
-        tx_id_valid && lend_time_valid && total_loan_amount_valid && total_interest_amount_valid
+      let output_datum_valid = lend_time_valid && total_loan_amount_valid && total_interest_amount_valid
       if output_datum_valid {
         Some(
           ValidateLoanInfo {
@@ -244,9 +241,8 @@ The collateral validator will assume that the input collateral UTxOs and output 
 
 A filter map function will be used for the input collateral UTxOs. The datum in the inputs will be used to construct the value of lender address hash, loan amount, loan asset, repay interest amount, and repay interest asset. We can trust these values in the datum because we have already validated them in the loan validator. We will only return a constructed ValidateRepayInfo if the following validations are true: 
 * The deadline to repay the loan has not passed, and the original loan borrower signed the transaction.
-* The tx ids in the datum are all the same. 
 * The total loan amount and total repay loan amount going to the interest validator need to equal the amount specified in the datum.
-These checks ensure that the loans were created in the same transaction, the entire loan not just parts of it, there is still time to pay off the loan.
+These checks ensure that the entire loan is being paid off not just parts of it and there is still time to pay off the loan.
 
 
 The output interest UTxOs contain the loan asset and repay interest asset in the datum. We will map through each UTxO to find the amount of each asset it contains. The rest of the ValidateRepayInfo properties will be constructed from the datum in the output interest UTxO.
