@@ -57,7 +57,7 @@ The validators will be written in Aiken. There will be three validators:
 When a lender submits a loan offer, we will split the initial loan into multiple small loans to be locked up at the loan validator. Each split-up UTxO will contain an equal amount of assets(or a multiplier of that amount). The amount may vary for different tokens. The parameters for each asset regarding the amount of asset in each loan UTxO will be disclosed openly through our GitHub repo. 
 
 
-When a borrower searches for a loan, we will use an algorithm that gives priority to loan offers submitted earliest. The probability of a loan offer being selected increases exponentially with the time elapsed since the lender submitted it. Lenders that submitted a large loan will have a higher chance of being selected, as they will contribute more UTxOs to the pool.  
+When a borrower searches for a loan, we will use a randomizing function that gives priority to loan offers submitted earliest. Lenders that submitted a large loan will have a higher chance of being selected, as they will contribute more UTxOs to the pool.  
 
 
 A loan UTxO will contain the following datum 
