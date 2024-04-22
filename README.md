@@ -69,7 +69,7 @@ Lenders that submitted a large loan will have a higher chance of being selected,
 
 A loan UTxO will contain the following datum 
 ```
-pub type LoanOfferDatum {
+pub type OfferLoanDatum {
   loan_amount: Int,
   loan_asset: AssetClass,
   collateral_amount: Int,
