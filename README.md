@@ -97,10 +97,13 @@ pub type ValidateLoanInfo {
   interest_asset: AssetClass,
   lender_address_hash: AddressHash,
   loan_duration: POSIXTime,
+  lovelace_amount: Int,
 }
 ```
 
-We first need to fold the input loan UTxOs and remove duplicate lender address hashes. When there are duplicate lender address hashes, we will sum the collateral amount, loan amount, and interest amount, and keep everything else the same. The collateral amount and interest amount will be retrieved from the datum. The loan amount will be calculated by the amount of loan assets in the input loan UTxO.
+We first need to fold the input loan UTxOs and remove duplicate lender address hashes. When there are duplicate lender address hashes, we will sum the collateral amount, loan amount, and interest amount, and keep everything else the same. The collateral amount and interest amount will be retrieved from the datum. The loan amount will be calculated by the amount of loan assets in the input loan UTxO. 
+
+Since the loan offers are split into multiple small UTxOs, if the lender is giving a large loan offer in a native asset they will need to send a considerable amount of ADA to be locked up. The lovelace_amount ensures they get their ADA back as well as their interest and loan.
 
 
 We will assume that the list of output collateral UTxO's datum contains a unique lender address hash. We will use a filter map function to construct a list of ValidateLoanInfo. The collateral amount will be calculated by grabbing the amount of collateral assets in the output UTXO. Everything else will be constructed from the datum of the collateral UTxOs. 
@@ -129,7 +132,7 @@ The filter map function will only return a constructed ValidateLoanInfo if the f
 * The total interest amount is equal to the total interest amount we got from the inputs 
 The latter two validations will be useful when paying back the loan.
   
-The resulting two lists will validate that the datum in the collateral UTxO has not been corrupted. For example, the lender address hash has been changed. It will also validate that the correct amount of collateral is being locked up at the collateral validator.
+Comparing the resulting two lists will validate that the datum in the collateral UTxO and the amount of collateral being locked up in the collateral validator are correct.
 
 #### Quick Code Walkthrough
 Get all inputs coming from the loan validator
