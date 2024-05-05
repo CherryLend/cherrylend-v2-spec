@@ -228,6 +228,7 @@ Check if the two lists of ValidateLoanInfo match up
 ```
 let info_difference = list.difference(input_loan_info, outputs_collateral_info)
 let info_matches = list.length(info_difference) == 0
+let length_matches = list.length(input_loan_info) == list.length(outputs_collateral_info)
 info_matches
 ```
 
@@ -330,9 +331,10 @@ fn get_outputs_interest_info(
 
 Check if the two lists of ValidateRepayInfo match up 
 ```
-let info_difference = list.difference(input_loan_info, outputs_collateral_info)
+let info_difference = list.difference(outputs_interest_info, inputs_collateral_info)
 let info_matches = list.length(info_difference) == 0
-info_matches
+let length_matches = list.length(outputs_interest_info) == list.length(inputs_collateral_info)
+info_matches && length_matches
 ```
 
 ### Cancel Loan Offer
@@ -373,7 +375,7 @@ must_be_signed_by_lender
 ### Links
 [Smart Contract](https://github.com/CherryLend/cherrylend-v2-smart-scripts)
 
-[Off-Chain](https://github.com/CherryLend/cherrylend-v2-offchain) (work in progress)
+[Off-Chain](https://github.com/CherryLend/cherrylend-v2-offchain)
 
 
 ### Special Shout Outs
